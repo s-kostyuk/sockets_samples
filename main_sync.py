@@ -17,6 +17,23 @@ data = s.recv(BUFFER_SIZE)  # type: bytes
 if data.startswith(b'OK'):
     print("Connection succeed: ", data)
 
-s.close()
+idle_command_string = "idle\n"
 
-#print("received data:", data)
+try:
+    data_counter = 0
+    while True:
+        # All communication data is encoded in UTF-8
+        s.send(idle_command_string.encode(encoding='utf-8'))
+
+        # Returns something like this: b'changed: player\nOK\n'
+        data = s.recv(BUFFER_SIZE)  # type: bytes
+
+        print(data_counter, "Received: ", data, flush=True)
+
+        data_counter += 1
+
+except KeyboardInterrupt:
+    pass
+
+finally:
+    s.close()
