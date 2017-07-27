@@ -6,6 +6,7 @@ TCP_IP = '127.0.0.1'
 TCP_PORT = 6600
 BUFFER_SIZE = 1024
 
+
 async def mpd_client(loop):
     reader, writer = await asyncio.open_connection(host=TCP_IP, port=TCP_PORT, loop=loop)
 
@@ -14,7 +15,13 @@ async def mpd_client(loop):
     if data.startswith(b'OK'):
         print("Connection succeed: ", data, flush=True)
 
-    idle_command_string = "idle\n"
+    # ----------------------------------------------------------------------------------------------
+
+    def send_idle():
+        idle_command_string = "idle\n"
+        write_data(idle_command_string.encode(encoding='utf-8'))
+
+    # ----------------------------------------------------------------------------------------------
 
     async def read_data():
         # Returns something like this: b'changed: player\nOK\n'
@@ -26,34 +33,47 @@ async def mpd_client(loop):
 
         data_counter += 1
 
+    # ----------------------------------------------------------------------------------------------
+
     def write_data(data: bytes):
         # All communication data is encoded in UTF-8
         writer.write(data)
         print("\nCommand send: {0}".format(data))
 
+    # ----------------------------------------------------------------------------------------------
+
+    async def send_play():
+        # disable idling state
+        write_data("noidle\n".encode(encoding='utf-8'))
+
+        # wait a second (just to simplify debugging)
+        asyncio.sleep(1)
+
+        # send "play"
+        write_data("play\n".encode(encoding='utf-8'))
+
+        # check if command succeed
+        await read_data()
+
     data_counter = 0
 
     while True:
-        write_data(idle_command_string.encode(encoding='utf-8'))
+        # new iteration started
+        print("--------------------------------------")
 
-        asyncio.sleep(1)
+        # start idling
+        send_idle()
 
-        write_data("noidle\n".encode(encoding='utf-8'))
-
+        # wait for state changed
         await read_data()
 
+        # wait a second (just to simplify debugging)
         asyncio.sleep(1)
 
-        write_data("play\n".encode(encoding='utf-8'))
+        # sand "play" command
+        await send_play()
 
-        await read_data()
-
-        asyncio.sleep(1)
-
-        write_data(idle_command_string.encode(encoding='utf-8'))
-
-        await read_data()
-
+        # wait a second (just to simplify debugging)
         asyncio.sleep(1)
 
 
