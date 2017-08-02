@@ -12,18 +12,6 @@ logging.basicConfig(level=logging.DEBUG)
 # MPDClientLogger.addHandler(stdout_stream)
 
 
-def pass_command_to_loop(command: str, client: MPDClient, loop: asyncio.AbstractEventLoop):
-    """
-    Utility function that calls specified command on MPD Client
-    in specified EventLoop
-    :param command: command to be called
-    :param client: an instance of MPDClient
-    :param loop: target EventLoop
-    :return: None
-    """
-    loop.create_task(client.send_command(command))
-
-
 def console_interface_function(client: MPDClient, loop: asyncio.AbstractEventLoop):
     """
     Simple BLOCKING function with an infinite loop inside that read commands from stdin
@@ -41,7 +29,7 @@ def console_interface_function(client: MPDClient, loop: asyncio.AbstractEventLoo
             print("Input loop interrupted")
             break
 
-        loop.call_soon_threadsafe(pass_command_to_loop, data, client, loop)
+        asyncio.run_coroutine_threadsafe(client.send_command(data), loop)
 
     loop.stop()  # Stop event loop and exit from the program
 
